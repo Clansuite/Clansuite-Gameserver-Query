@@ -1,59 +1,48 @@
 <?php
-/*
- *  csQuery is a fork of the deprecated gsQuery by Jeremias Reith.
- *  It's also inspired by gameq, squery, phgstats
- *  and several other projectes like kquery and hlsw.
+
+/**
+ * Clansuite Gameserver Query
+ * Jens-André Koch © 2005 - onwards
  *
- *  csQuery - gameserver query class
- *  Copyright (c) 2005-2006 Jens-Andr� Koch <jakoch@web.de>
- *  http://www.clansuite.com
+ * This file is part of "Clansuite Gameserver Query".
  *
- *  gsQuery - Querys game servers
- *  Copyright (c) 2002-2004 Jeremias Reith <jr@terragate.net>
- *  http://www.gsQuery.org
+ * License: GNU/LGPL 2.1+
  *
- *  This file is part of the e-sport CMS Clansuite.
- *  This file is part of the csQuery gameserver query library..
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation; either version 2.1 of the License, or
+ * (at your option) any later version.
  *
- *  The csQuery library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  The csQuery library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with the csQuery library; if not, write to the
- *  Free Software Foundation, Inc.,
- *  59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
- *
- *  SVN: $Id: steam.php 4351 2010-04-17 17:23:11Z vain $
  */
 
 class steam extends csQuery
 {
-  var $playerFormat = '/sscore/x2/ftime';
+  public $playerFormat = '/sscore/x2/ftime';
 
-  function getGameJoinerURI()
+  public function getGameJoinerURI()
   {
     return 'gamejoin://hlife@'. $this->address .':'. $this->hostport .'/'. $this->gametype;
   }
 
-  function query_server($getPlayers=TRUE,$getRules=TRUE)
+  public function query_server($getPlayers=TRUE,$getRules=TRUE)
   {
     // flushing old data if necessary
-    if($this->online) {
+    if ($this->online) {
       $this->_init();
     }
 
     $starttime = microtime();
 
     $command="\xFF\xFF\xFF\xFF\x54\x53\x6F\x75\x72\x63\x65\x20\x45\x6E\x67\x69\x6E\x65\x20\x51\x75\x65\x72\x79\x00";
-    if(!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
+    if (!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
       return FALSE;
     }
 
@@ -112,13 +101,13 @@ class steam extends csQuery
     // do rules
     //challange
    $command="\xFF\xFF\xFF\xFF\x57";
-   if(!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
+   if (!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
      return FALSE;
     }
     $challenge=substr($result,-4);
     //query
    $command="\xFF\xFF\xFF\xFF\x56";
-    if(!($result=$this->_sendCommand($this->address,$this->queryport,$command.$challenge))) {
+    if (!($result=$this->_sendCommand($this->address,$this->queryport,$command.$challenge))) {
       return FALSE;
     }
 
@@ -131,10 +120,10 @@ class steam extends csQuery
 
        $str="/\xFF\xFF\xFF\xFF/"; // first packet signature (only first packet matches this)
 
-      if(!empty($block[0]) && !empty($block[1])) {
-       if(preg_match($str, $block[0])) {
+      if (!empty($block[0]) && !empty($block[1])) {
+       if (preg_match($str, $block[0])) {
        $result = substr($block[0], 12, strlen($block[0])).substr($block[1], 5, strlen($block[1]));
-       } elseif(preg_match($str, $block[1])) {
+       } elseif (preg_match($str, $block[1])) {
        $result = substr($block[1], 12, strlen($block[1])).substr($block[0], 5, strlen($block[1])).substr($block[0], 5, strlen($block[0]));
         }
        } elseif (!empty($block[0])) {
@@ -148,8 +137,8 @@ class steam extends csQuery
     $exploded_data = explode(chr(0), $result);
     $this->password = -1;
      $z=count($exploded_data);
-     for($i=$j;$i<$z;$i++) {
-       switch($exploded_data[$i++]) {
+     for ($i=$j;$i<$z;$i++) {
+       switch ($exploded_data[$i++]) {
        case 'sv_password':
     $this->password=$exploded_data[$i];
     break;
@@ -160,23 +149,22 @@ class steam extends csQuery
     if ($exploded_data[$i]=='1') $this->gametype='Cooperative';
     break;
        default:
-       if(isset($exploded_data[$i-1]) && isset($exploded_data[$i])) {
+       if (isset($exploded_data[$i-1]) && isset($exploded_data[$i])) {
          $this->rules[$exploded_data[$i-1]]=$exploded_data[$i];
        }
        }
      }
 
-
-    if($getPlayers) {
+    if ($getPlayers) {
       //challange
      $command="\xFF\xFF\xFF\xFF\x57";
-     if(!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
+     if (!($result=$this->_sendCommand($this->address,$this->queryport,$command))) {
        return FALSE;
       }
       $challenge=substr($result,-4);
       //query
      $command="\xFF\xFF\xFF\xFF\x55";
-      if(!($result=$this->_sendCommand($this->address,$this->queryport,$command.$challenge))) {
+      if (!($result=$this->_sendCommand($this->address,$this->queryport,$command.$challenge))) {
        return FALSE;
       }
       $this->_processPlayers($result, $this->playerFormat, 8);
@@ -187,14 +175,15 @@ class steam extends csQuery
     }
 
     $this->online = TRUE;
+
     return TRUE;
   }
 
-
-  function getDebugDumps($html=FALSE, $dumper=NULL) {
+  public function getDebugDumps($html=FALSE, $dumper=NULL)
+  {
     require_once(csQuery_DIR . 'includes/HexDumper.class.php');
 
-    if(!isset($dumper)) {
+    if (!isset($dumper)) {
       $dumper = new HexDumper();
       $dumper->setDelimiter(0x00);
       $dumper->setEndOfHeader(0x04);
@@ -203,21 +192,20 @@ class steam extends csQuery
     return parent::getDebugDumps($html, $dumper);
   }
 
-
-  function _processPlayers($data, $format, $formatLength)
+  public function _processPlayers($data, $format, $formatLength)
   {
     $len = strlen($data);
 
     $posNextPlayer=$len;
 
-    for($i=6;$i<$len;$i=$endPlayerName+$formatLength+1) {
+    for ($i=6;$i<$len;$i=$endPlayerName+$formatLength+1) {
       // finding end of player name
       $endPlayerName = strpos($data, "\x00", ++$i);
-      if($endPlayerName == FALSE) { return FALSE; } // abort on bogus data
+      if ($endPlayerName == FALSE) { return FALSE; } // abort on bogus data
       // unpacking player's score and time
       $curPlayer = unpack('@'.($endPlayerName+1).$format, $data);
       // format time
-      if(array_key_exists('time', $curPlayer)) {
+      if (array_key_exists('time', $curPlayer)) {
    $curPlayer['time'] = date('H:i:s', mktime(0, 0, $curPlayer['time']));
       }
       // extract player name
@@ -227,7 +215,4 @@ class steam extends csQuery
     }
   }
 
-
 }
-
-?>
